@@ -1,0 +1,267 @@
+version: '3.1'
+
+services:
+
+  mongo:
+    image: library/mongo:4.0.23
+    container_name: mongodb
+    hostname: mongodb
+    ports:
+      - "27017:27017"
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - ./docker_data/mongodb/bitnami:/bitnami
+    networks:
+      - mssdnet
+
+
+  mongo-express:
+    image: library/mongo-express:0.54.0
+    hostname: mongodb_express
+    restart: always
+    ports:
+      - 8081:8081
+    depends_on:
+      - mongo
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+    networks:
+      - mssdnet
+
+
+  db:
+    image: library/mysql:8.0.23
+    container_name: mysql
+    hostname: mysql
+    volumes:
+      - ./.docker/mysql/etc/mysql:/etc/mysql/conf.d
+      - ./.docker/mysql/etc/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
+      - ./docker_data/mysql/db_data:/var/lib/mysql
+    restart: always
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: micro_server_demo
+      MYSQL_DATABASE: micro_server_demo
+      MYSQL_USER: micro_server_demo
+      MYSQL_PASSWORD: micro_server_demo
+    networks:
+      - mssdnet
+
+  redis:
+    image: library/redis:6.2.1
+    container_name : redis
+    hostname: redis
+    volumes:
+      - ./docker_data/redis/data:/data
+    restart: always
+    ports:
+      - "6389:6379"
+    networks:
+      - mssdnet
+
+  zoo1:
+    image: zookeeper:3.4.9
+    hostname: zoo1
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_PORT: 2181
+      ZOO_SERVERS: server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888
+    volumes:
+      - ./docker_data/zookeeper/zoo1/data:/data
+      - ./docker_data/zookeeper/zoo1/datalog:/datalog
+    networks:
+      - mssdnet
+
+  zoo2:
+    image: zookeeper:3.4.9
+    hostname: zoo2
+    ports:
+      - "2182:2182"
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_PORT: 2182
+      ZOO_SERVERS: server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888
+    volumes:
+      - ./docker_data/zookeeper/zoo2/data:/data
+      - ./docker_data/zookeeper/zoo2/datalog:/datalog
+    networks:
+      - mssdnet
+
+  zoo3:
+    image: zookeeper:3.4.9
+    hostname: zoo3
+    ports:
+      - "2183:2183"
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_PORT: 2183
+      ZOO_SERVERS: server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888
+    volumes:
+      - ./docker_data/zookeeper/zoo3/data:/data
+      - ./docker_data/zookeeper/zoo3/datalog:/datalog
+    networks:
+      - mssdnet
+
+  dubbo_admin:
+    image: apache/dubbo-admin
+    hostname: dubbo_admin
+    depends_on:
+      - zoo1
+      - zoo2
+      - zoo3
+    ports:
+      - "8082:8080"
+    environment:
+      - admin.registry.address=zookeeper://zoo1:2181
+      - admin.config-center=zookeeper://zoo1:2181
+      - admin.metadata-report.address=zookeeper://zoo1:2181
+    networks:
+      - mssdnet
+
+#  kafka-zookeeper:
+#    image: openzipkin/zipkin-kafka
+#    container_name : kafka
+#    hostname: kafka
+#    environment:
+#      # corresponds to your docker machine and your producer's broker list
+#      - KAFKA_ADVERTISED_HOST_NAME=10.0.75.1
+#    ports:
+#      - 8181:2181
+#      - 9092:9092
+#    networks:
+#      - mssdnet
+
+#  zipkin:
+#    image: openzipkin/zipkin
+#    container_name : zipkin
+#    # Environment settings are defined here https://github.com/openzipkin/zipkin/tree/1.19.0/zipkin-server#environment-variables
+#    hostname: zipkin
+#    environment:
+#      - KAFKA_ZOOKEEPER=kafka-zookeeper
+#    depends_on:
+#      - kafka-zookeeper
+#    ports:
+#      # Port used for the Zipkin UI and HTTP Api
+#      - 9411:9411
+#      # Uncomment if you set SCRIBE_ENABLED=true
+#      # - 9410:9410
+#    networks:
+#      - mssdnet
+
+#  activemq:
+#    image: webcenter/activemq:latest
+#    container_name : activeMq
+#    ports:
+#      - 8161:8161
+#      - 61616:61616
+#      - 61613:61613
+#    networks:
+#      - mssdnet
+
+#  elasticsearch:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:6.6.1
+#    container_name: elasticsearch
+#    hostname: elasticsearch
+#    environment:
+#      - cluster.name=docker-cluster
+#      - bootstrap.memory_lock=true
+#      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+#    ulimits:
+#      memlock:
+#        soft: -1
+#        hard: -1
+#    volumes:
+#      - esdata1:/usr/share/elasticsearch/data
+#    ports:
+#      - 9200:9200
+#    networks:
+#      - mssdnet
+#  elasticsearch2:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:6.6.1
+#    container_name: elasticsearch2
+#    hostname: elasticsearch2
+#    environment:
+#      - cluster.name=docker-cluster
+#      - bootstrap.memory_lock=true
+#      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+#      - "discovery.zen.ping.unicast.hosts=elasticsearch"
+#    ulimits:
+#      memlock:
+#        soft: -1
+#        hard: -1
+#    volumes:
+#      - esdata2:/usr/share/elasticsearch/data
+#    networks:
+#      - mssdnet
+
+#该docker配置有点问题,采用下面的配置
+  #  kibana:
+  #    image: docker.elastic.co/kibana/kibana:6.6.1
+  #    volumes:
+  #      #这里加入了一个plugin文件夹，将它里面的内容写入kibana/plugins文件夹下
+  #      - ./plugins:/usr/share/kibana/plugins:rw
+  #      - ./.docker/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
+  #    depends_on:
+  #      - elasticsearch
+  #    ports:
+  #      #设置kibana端口，注意这是一个数组
+  #      - 5601:5601
+  #    networks:
+  #      - mssdnet
+
+#  暂时未启动,节省资源
+#  kibana:
+#    image: docker.elastic.co/kibana/kibana:6.6.1
+#    container_name: kibana
+#    volumes:
+#      #这里加入了一个plugin文件夹，将它里面的内容写入kibana/plugins文件夹下
+#      - .docker/kibana/plugins:/usr/share/kibana/plugins:rw
+#    environment:
+#      #设置elasticsearch服务器url
+#      ELASTICSEARCH_URL: http://elasticsearch:9200
+#    depends_on:
+#      - elasticsearch
+#    ports:
+#      #设置kibana端口，注意这是一个数组
+#      - 5601:5601
+#    networks:
+#      - mssdnet
+
+#  logstash:
+#    image: docker.elastic.co/logstash/logstash:6.6.1
+#    command: logstash -f /etc/logstash/conf.d/logstash.conf
+#    volumes:
+#      - ./.docker/logstash/conf.d:/etc/logstash/conf.d
+#      - ./docker_data/logstash/tmp:/tmp
+#    container_name: logstash
+#    hostname: logstash
+#    restart: always
+#    depends_on:
+#      - elasticsearch
+#    ports:
+#      - "7001-7005:7001-7005"
+#      - "4567:4567"
+#    networks:
+#      - mssdnet
+
+
+volumes:
+  esdata1:
+    driver: local
+  esdata2:
+    driver: local
+
+
+networks:
+  mssdnet:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.116.43.0/24
