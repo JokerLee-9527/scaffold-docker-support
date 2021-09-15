@@ -114,3 +114,18 @@
    ROOT_USERNAME: root
    
    ROOT_PASSWORD: example
+
+
+9. RabbitMQ
+   端口比较多看看配置吧!
+   控制台: (user/bitnami)
+   http://127.0.0.1:15672/
+
+
+10. activemq
+    spring.activemq.broker-url=tcp://127.0.0.1:61616
+    控制台: (admin/admin)
+    http://127.0.0.1:8161/admin/
+
+
+
