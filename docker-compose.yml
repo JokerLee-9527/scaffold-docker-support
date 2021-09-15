@@ -52,6 +52,24 @@ services:
     networks:
       - mssdnet
 
+#    image: mysql:5.7
+#    container_name: mysql
+#    hostname: mysql
+#    volumes:
+#      - ./.docker/mysql/etc/mysql:/etc/mysql/conf.d
+#      - ./.docker/mysql/etc/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
+#      - ./docker_data/mysql/db_data:/var/lib/mysql
+#    restart: always
+#    ports:
+#      - "3308:3306"
+#    environment:
+#      MYSQL_ROOT_PASSWORD: micro_server_demo
+#      MYSQL_DATABASE: micro_server_demo
+#      MYSQL_USER: micro_server_demo
+#      MYSQL_PASSWORD: micro_server_demo
+#    networks:
+#      - mssdnet
+
   redis:
     image: library/redis:6.2.1
     container_name : redis
@@ -125,18 +143,24 @@ services:
     networks:
       - mssdnet
 
-#  kafka-zookeeper:
-#    image: openzipkin/zipkin-kafka
-#    container_name : kafka
-#    hostname: kafka
-#    environment:
-#      # corresponds to your docker machine and your producer's broker list
-#      - KAFKA_ADVERTISED_HOST_NAME=10.0.75.1
-#    ports:
-#      - 8181:2181
-#      - 9092:9092
-#    networks:
-#      - mssdnet
+  kafka:
+    image: 'bitnami/kafka:latest'
+    ports:
+      - '9092:9092'
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zoo1:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zoo1
+      - zoo2
+      - zoo3
+    networks:
+      mssdnet:
+        ipv4_address : 172.116.43.22
+
 
 #  zipkin:
 #    image: openzipkin/zipkin
@@ -155,104 +179,133 @@ services:
 #    networks:
 #      - mssdnet
 
-#  activemq:
-#    image: webcenter/activemq:latest
-#    container_name : activeMq
-#    ports:
-#      - 8161:8161
-#      - 61616:61616
-#      - 61613:61613
-#    networks:
-#      - mssdnet
+  activemq:
+    image: webcenter/activemq:latest
+    container_name : activeMq
+    ports:
+      - 8161:8161
+      - 61616:61616
+      - 61613:61613
+    networks:
+      - mssdnet
 
-#  elasticsearch:
-#    image: docker.elastic.co/elasticsearch/elasticsearch:6.6.1
-#    container_name: elasticsearch
-#    hostname: elasticsearch
-#    environment:
-#      - cluster.name=docker-cluster
-#      - bootstrap.memory_lock=true
-#      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-#    ulimits:
-#      memlock:
-#        soft: -1
-#        hard: -1
-#    volumes:
-#      - esdata1:/usr/share/elasticsearch/data
-#    ports:
-#      - 9200:9200
-#    networks:
-#      - mssdnet
-#  elasticsearch2:
-#    image: docker.elastic.co/elasticsearch/elasticsearch:6.6.1
-#    container_name: elasticsearch2
-#    hostname: elasticsearch2
-#    environment:
-#      - cluster.name=docker-cluster
-#      - bootstrap.memory_lock=true
-#      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-#      - "discovery.zen.ping.unicast.hosts=elasticsearch"
-#    ulimits:
-#      memlock:
-#        soft: -1
-#        hard: -1
-#    volumes:
-#      - esdata2:/usr/share/elasticsearch/data
-#    networks:
-#      - mssdnet
-
-#该docker配置有点问题,采用下面的配置
-  #  kibana:
-  #    image: docker.elastic.co/kibana/kibana:6.6.1
-  #    volumes:
-  #      #这里加入了一个plugin文件夹，将它里面的内容写入kibana/plugins文件夹下
-  #      - ./plugins:/usr/share/kibana/plugins:rw
-  #      - ./.docker/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
-  #    depends_on:
-  #      - elasticsearch
-  #    ports:
-  #      #设置kibana端口，注意这是一个数组
-  #      - 5601:5601
-  #    networks:
-  #      - mssdnet
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.6.1
+    container_name: elasticsearch
+    hostname: elasticsearch
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata1:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      mssdnet:
+        ipv4_address : 172.116.43.21
+  elasticsearch2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.6.1
+    container_name: elasticsearch2
+    hostname: elasticsearch2
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.zen.ping.unicast.hosts=elasticsearch"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata2:/usr/share/elasticsearch/data
+    networks:
+      mssdnet:
+        ipv4_address : 172.116.43.20
 
 #  暂时未启动,节省资源
-#  kibana:
-#    image: docker.elastic.co/kibana/kibana:6.6.1
-#    container_name: kibana
-#    volumes:
-#      #这里加入了一个plugin文件夹，将它里面的内容写入kibana/plugins文件夹下
-#      - .docker/kibana/plugins:/usr/share/kibana/plugins:rw
-#    environment:
-#      #设置elasticsearch服务器url
-#      ELASTICSEARCH_URL: http://elasticsearch:9200
-#    depends_on:
-#      - elasticsearch
-#    ports:
-#      #设置kibana端口，注意这是一个数组
-#      - 5601:5601
-#    networks:
-#      - mssdnet
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.6.1
+    container_name: kibana
+    volumes:
+      #这里加入了一个plugin文件夹，将它里面的内容写入kibana/plugins文件夹下
+      - .docker/kibana/plugins:/usr/share/kibana/plugins:rw
+    environment:
+      #设置elasticsearch服务器url
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    ports:
+      #设置kibana端口，注意这是一个数组
+      - 5601:5601
+    networks:
+      - mssdnet
 
-#  logstash:
-#    image: docker.elastic.co/logstash/logstash:6.6.1
-#    command: logstash -f /etc/logstash/conf.d/logstash.conf
-#    volumes:
-#      - ./.docker/logstash/conf.d:/etc/logstash/conf.d
-#      - ./docker_data/logstash/tmp:/tmp
-#    container_name: logstash
-#    hostname: logstash
-#    restart: always
-#    depends_on:
-#      - elasticsearch
-#    ports:
-#      - "7001-7005:7001-7005"
-#      - "4567:4567"
-#    networks:
-#      - mssdnet
+  logstash:
+    image: docker.elastic.co/logstash/logstash:6.6.1
+    command: logstash -f /etc/logstash/conf.d/logstash.conf
+    volumes:
+      - ./.docker/logstash/conf.d:/etc/logstash/conf.d
+      - ./docker_data/logstash/tmp:/tmp
+    container_name: logstash
+    hostname: logstash
+    restart: always
+    depends_on:
+      - elasticsearch
+    ports:
+      - "7001-7005:7001-7005"
+      - "4567:4567"
+    networks:
+      - mssdnet
+
+#https://github.com/bitnami/bitnami-docker-rabbitmq  user/bitnami
+  stats:
+    image: bitnami/rabbitmq
+    environment:
+      - RABBITMQ_NODE_TYPE=stats
+      - RABBITMQ_NODE_NAME=rabbit@stats
+      - RABBITMQ_ERL_COOKIE=s3cr3tc00ki3
+    ports:
+      - '15672:15672'
+    volumes:
+      - 'rabbitmqstats_data:/bitnami'
+    networks:
+      - mssdnet
+  queue-disc1:
+    image: bitnami/rabbitmq
+    environment:
+      - RABBITMQ_NODE_TYPE=queue-disc
+      - RABBITMQ_NODE_NAME=rabbit@queue-disc1
+      - RABBITMQ_CLUSTER_NODE_NAME=rabbit@stats
+      - RABBITMQ_ERL_COOKIE=s3cr3tc00ki3
+    volumes:
+      - 'rabbitmqdisc1_data:/bitnami'
+    networks:
+      - mssdnet
+  queue-ram1:
+    image: bitnami/rabbitmq
+    environment:
+      - RABBITMQ_NODE_TYPE=queue-ram
+      - RABBITMQ_NODE_NAME=rabbit@queue-ram1
+      - RABBITMQ_CLUSTER_NODE_NAME=rabbit@stats
+      - RABBITMQ_ERL_COOKIE=s3cr3tc00ki3
+    volumes:
+      - 'rabbitmqram1_data:/bitnami'
+    networks:
+      - mssdnet
 
 
 volumes:
+  rabbitmqstats_data:
+    driver: local
+  rabbitmqdisc1_data:
+    driver: local
+  rabbitmqram1_data:
+    driver: local
   esdata1:
     driver: local
   esdata2:
