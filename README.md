@@ -4,38 +4,19 @@
 
 ## 该项目主要用于脚手架项目的开发和调试的本地环境
 
+## Docker参考配置(配置低了可能部分容器启动失败)
+
+![docker_setting.png](.\readme_res\docker_setting.png)
+
+
+
+
+
 ## 使用方法
 
-1. docker-compose.yml 的IP替换为自己的主机IP(网卡的ip)
-   
-    以太网适配器 vEthernet (DockerNAT):
-   
-    连接特定的 DNS 后缀 . . . . . . . :
-   
-    IPv4 地址 . . . . . . . . . . . . : 10.0.75.1
-   
-    子网掩码  . . . . . . . . . . . . : 255.255.255.0
-   
-    默认网关. . . . . . . . . . . . . :
-   
-    (modify the KAFKA_ADVERTISED_HOST_NAME in docker-compose.yml to match your docker host IP (Note: Do not use localhost or 127.0.0.1 as the host ip if you want to run multiple brokers.)
-   
-    https://github.com/wurstmeister/kafka-docker)
+1. 执行脚本stop_and_start_docker.sh
 
-```yaml
-    - KAFKA_ADVERTISED_HOST_NAME=172.24.78.129
-```
-
-2. 同上修改配置文件的ip ./.docker/logstash/conf.d/logstash.conf
-   
-   ```conf
-    bootstrap_servers => "172.24.78.129:9092"
-    hosts => ["172.24.78.129:9200"]
-   ```
-
-3. 执行脚本stop_and_start_docker.sh
-
-4. 本来是应该写脚本来添加db和用户的,因为mongoDB脚本不熟,未能完成.
+2. 本来是应该写脚本来添加db和用户的,因为mongoDB脚本不熟,未能完成.
    
    所以请手动创建database=scaffold,username=scaffold,password=scaffold，并给用户scaffold赋予数据库scaffold权限. (这块脚本会尽快补上 TODO)
 
@@ -50,7 +31,7 @@
 
 ## 配置参数
 
-1. 数据库mysql: todo
+1. 数据库mysql 8:  (如果启动mysql5.7参考docker-compose.yml中mysql5.7相关) (单实例)
    
    用户名:micro_server_demo
    
@@ -59,42 +40,68 @@
    ip:127.0.0.1
    
    端口:3308
+   
+   
 
-2. zookeeper:
+2. zookeeper: (3台最小的集群)
    
-    ip:127.0.0.1
+   ip:127.0.0.1
    
-    port:2181
+   zoo1 port:2181
    
-   dubbo admin 
+   zoo2 port:2182
+   
+   zoo3 port:2183
+   
+   GUI工具(直接运行): tools/zookeeper/ZooInspector/zookeeper-dev-ZooInspector.jar
+   
+   
+
+3. dubbo admin 
    
    [http://127.0.0.1:8082/](http://127.0.0.1:8082/)
+   
+   用户名: root
+   
+   密码 : root
+   
+   ps:  registry.address , config-center, metadata-report.address三类数据存储到了一个集群中(zoo1, zoo2, zoo3)
+   
+   
 
-3. Redis:todo
+4. Redis:todo (单点)
    
     ip:127.0.0.1
    
     port:6389
+   
+   GUI工具(需要安装): tools/redis/redis-desktop-manager-0.9.5.exe
+   
+   
 
-4. Kafak:todo
+5. Kafak:todo
    
    ip:127.0.0.1
    
    listeners port:9092
    
    注册的zk地址是127.0.0.1:2181
-
-5. zipkin:todo
    
-   [http://127.0.0.1:9411/zipkin/](http://127.0.0.1:9411/zipkin/)
+   GUI工具(需要安装): tools/kafka/kafkatool_64bit.exe
+   
+   
 
 6. elasticsearch:todo
    
-    http://localhost:9200
+    http://127.0.0.1:9200
+   
+   
 
 7. kibana:todo
    
     http://127.0.0.1:5601
+   
+   
 
 8. mongoDB:
    
@@ -107,7 +114,3 @@
    ROOT_USERNAME: root
    
    ROOT_PASSWORD: example
-   
-   
-
-

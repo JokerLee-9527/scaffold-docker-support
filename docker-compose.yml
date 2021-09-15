@@ -52,6 +52,8 @@ services:
     networks:
       - mssdnet
 
+# 如果使用mysql5.7 放开下面的,同时屏蔽上面的db段
+#  db:
 #    image: mysql:5.7
 #    container_name: mysql
 #    hostname: mysql
