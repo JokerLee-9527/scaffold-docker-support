@@ -6,7 +6,7 @@
 
 ## Docker参考配置(配置低了可能部分容器启动失败)
 
-![docker_setting.png](.\readme_res\docker_setting.png)
+![docker_setting.png](./readme_res/docker_setting.png)
 
 ## 使用方法
 
