@@ -122,20 +122,20 @@
    
    tasklist|findstr "6624"                        <--  根据进程号查询,或者直接找PID
 
-2. 系统保留端口问题
+2. Windows系统保留端口问题
    
    查询端口是否被排除
    netsh interface ipv4 show excludedportrange protocol=tcp
    
    修改网络规则
-
-3. 重启
+   
+   1. 重启
    dism.exe /Online /Disable-Feature:Microsoft-Hyper-V 
 
-4. 启动后
+   2. 启动后
    netsh int ipv4 add excludedportrange protocol=tcp startport=<your port> numberofports=1
 
-5. 第二步操作后继续第三步操作,然后重启
+   3. 第二步操作后继续第三步操作,然后重启
    dism.exe /Online /Enable-Feature:Microsoft-Hyper-V /All
 
 本次用到的一些端口
